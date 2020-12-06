@@ -13,7 +13,7 @@ import (
 
 type Config struct {
 	Namespace  string
-	Webhook    string
+	ConfigPath string
 	NotifyType string
 }
 
@@ -21,16 +21,19 @@ type Daemon struct {
 	config Config
 }
 
-func NewConfig(namespace, webhook, notifyType string) (Config, error) {
-	return Config{Namespace: namespace, Webhook: webhook, NotifyType: notifyType}, nil
+func NewConfig(namespace, configPath, notifyType string) (Config, error) {
+	return Config{Namespace: namespace, ConfigPath: configPath, NotifyType: notifyType}, nil
 }
 
 func NewDaemon(c Config) (Daemon, error) {
 	return Daemon{config: c}, nil
 }
 
-func (d Daemon) Start() {
-	n := notify.NewNotify(d.config.NotifyType, d.config.Webhook)
+func (d Daemon) Start() error {
+	n, err := notify.NewNotify(d.config.NotifyType, d.config.ConfigPath)
+	if err != nil {
+		return err
+	}
 	kconf := ctrl.GetConfigOrDie()
 	clientset := kubernetes.NewForConfigOrDie(kconf)
 	manager := rollout.NewNamager(clientset, d.config.Namespace)

@@ -20,8 +20,8 @@ func main() {
 			Usage: "k8s namespace",
 		},
 		cli.StringFlag{
-			Name:  "webhook",
-			Usage: "webhook url",
+			Name:  "config",
+			Usage: "config path",
 		},
 		cli.StringFlag{
 			Name:  "type",
@@ -38,8 +38,8 @@ func action(c *cli.Context) error {
 		cli.ShowAppHelp(c)
 		return nil
 	}
-	webhook := c.String("webhook")
-	if webhook == "" {
+	configPath := c.String("config")
+	if configPath == "" {
 		cli.ShowAppHelp(c)
 		return nil
 	}
@@ -48,7 +48,7 @@ func action(c *cli.Context) error {
 		cli.ShowAppHelp(c)
 		return nil
 	}
-	config, err := daemon.NewConfig(namespace, webhook, notifyType)
+	config, err := daemon.NewConfig(namespace, configPath, notifyType)
 	if err != nil {
 		log.Fatal(err)
 		return nil

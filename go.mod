@@ -3,8 +3,11 @@ module github.com/takutakahashi/rollout-notifier
 go 1.15
 
 require (
+	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/labstack/gommon v0.3.0
+	github.com/slack-go/slack v0.7.2
 	github.com/urfave/cli v1.22.5
+	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/api v0.18.6
 	k8s.io/apimachinery v0.18.6
 	k8s.io/client-go v0.18.6
