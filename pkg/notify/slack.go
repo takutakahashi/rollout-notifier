@@ -33,38 +33,41 @@ func NewSlackNotify(configPath string) (SlackNotify, error) {
 		return sn, err
 	}
 	sn.c = slack.New(sn.config.Token)
+	sn.Test()
 	return sn, nil
 }
 
+func (n SlackNotify) Test() error {
+	return n.notifyError("test")
+}
+
 func (n SlackNotify) Finish(target string) error {
+	return n.notifySuccess(fmt.Sprintf("Rollout finished successflly! :+1: target: %s", target))
+}
+
+func (n SlackNotify) Start(target string) error {
+	return n.notifySuccess(fmt.Sprintf("Rollout started! :rocket: target: %s", target))
+}
+
+func (n SlackNotify) notifySuccess(message string) error {
+	return n.notify(message, "#009900")
+}
+
+func (n SlackNotify) notifyError(message string) error {
+	return n.notify(message, "#c62828")
+}
+
+func (n SlackNotify) notify(message, color string) error {
 	attachment := slack.Attachment{
-		Pretext: "some pretext",
-		Text:    "some text",
-		// Uncomment the following part to send a field too
-		/*
-			Fields: []slack.AttachmentField{
-				slack.AttachmentField{
-					Title: "a",
-					Value: "no",
-				},
-			},
-		*/
+		Text:  message,
+		Color: color,
 	}
 
 	_, _, err := n.c.PostMessage(
 		n.config.ChannelID,
-		slack.MsgOptionText("Some text", false),
+
 		slack.MsgOptionAttachments(attachment),
-		slack.MsgOptionAsUser(true), // Add this if you want that the bot would post message as a user, otherwise it will send response using the default slackbot
+		slack.MsgOptionAsUser(true),
 	)
-	if err != nil {
-		fmt.Printf("%s\n", err)
-		return nil
-	}
-	return nil
-}
-
-func (n SlackNotify) Start(target string) error {
-
-	return nil
+	return err
 }
