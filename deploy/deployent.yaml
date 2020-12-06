@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: rollout-notifier
+    namespace: default
+  name: rollout-notifier
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rollout-notifier
+      namespace: default
+  template:
+    metadata:
+      labels:
+        app: rollout-notifier
+        namespace: default
+    spec:
+      serviceAccountName: rollout-notifier
+      containers:
+      - image: takutakahashi/container-api-gateway
+        command:
+          - /daemon
+          - --namespace
+          - default
+          - --type
+          - noop
+          - --config
+          - /etc/rollout-notifier/config.yaml
+        imagePullPolicy: Always
+        name: api
+        volumeMounts:
+        - mountPath: /etc/rollout-notifier
+          name: config
+      volumes:
+      - name: config
+        secret:
+          name: rollout-notifier-secret
