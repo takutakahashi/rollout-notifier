@@ -19,7 +19,7 @@ spec:
     spec:
       serviceAccountName: rollout-notifier
       containers:
-      - image: takutakahashi/container-api-gateway
+      - image: ghcr.io/takutakahashi/rollout-notifier
         command:
           - /daemon
           - --namespace
