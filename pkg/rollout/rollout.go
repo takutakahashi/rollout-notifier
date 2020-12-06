@@ -3,7 +3,6 @@ package rollout
 import (
 	"context"
 
-	"github.com/labstack/gommon/log"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -34,10 +33,6 @@ func (m Manager) GetTargets() ([]string, error) {
 		}
 	}
 	return result, nil
-}
-
-func (m Manager) StartWatch(ctx context.Context, name string) {
-	log.Info("start watch")
 }
 
 func (m Manager) Finished(name string) (bool, error) {
