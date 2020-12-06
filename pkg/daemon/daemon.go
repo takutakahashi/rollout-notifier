@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/labstack/gommon/log"
+	"github.com/takutakahashi/rollout-notifier/pkg/notify"
 	"github.com/takutakahashi/rollout-notifier/pkg/rollout"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -28,15 +30,27 @@ func NewDaemon(c Config) (Daemon, error) {
 }
 
 func (d Daemon) Start() {
+	n := notify.NewNotify(d.config.NotifyType, d.config.Webhook)
 	kconf := ctrl.GetConfigOrDie()
 	clientset := kubernetes.NewForConfigOrDie(kconf)
 	manager := rollout.NewNamager(clientset, d.config.Namespace)
+	log.Info("starting daemon...")
 	tracing := map[string]context.Context{}
-	_ = tracing
 	for {
 		targets, err := manager.GetTargets()
+		log.Info(targets)
 		if err != nil {
 			continue
+		}
+		for t := range tracing {
+			finished, err := manager.Finished(t)
+			if err != nil {
+				continue
+			}
+			if finished {
+				delete(tracing, t)
+				n.Finish(t)
+			}
 		}
 		for _, t := range targets {
 			beforeContext, alreadyStarted := tracing[t]
@@ -45,16 +59,10 @@ func (d Daemon) Start() {
 			}
 			ctx, _ := context.WithTimeout(context.Background(), 80*time.Minute)
 			tracing[t] = ctx
-			go manager.StartWatch(ctx, t)
-			go func() {
-				select {
-				case <-ctx.Done():
-					delete(tracing, t)
-				}
-			}()
+			n.Start(t)
 
 		}
-		time.Sleep(10 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 
 }

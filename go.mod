@@ -3,7 +3,9 @@ module github.com/takutakahashi/rollout-notifier
 go 1.15
 
 require (
+	github.com/labstack/gommon v0.3.0
 	github.com/urfave/cli v1.22.5
+	k8s.io/api v0.18.6
 	k8s.io/apimachinery v0.18.6
 	k8s.io/client-go v0.18.6
 	k8s.io/kube-openapi v0.0.0-20200410145947-bcb3869e6f29 // indirect
