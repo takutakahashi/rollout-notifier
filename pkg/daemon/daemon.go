@@ -41,7 +41,6 @@ func (d Daemon) Start() error {
 	tracing := map[string]context.Context{}
 	for {
 		targets, err := manager.GetTargets()
-		log.Info(targets)
 		if err != nil {
 			continue
 		}
@@ -52,6 +51,7 @@ func (d Daemon) Start() error {
 			}
 			if finished {
 				delete(tracing, t)
+				log.Infof("notify finish. %s", t)
 				n.Finish(t)
 			}
 		}
@@ -62,10 +62,11 @@ func (d Daemon) Start() error {
 			}
 			ctx, _ := context.WithTimeout(context.Background(), 80*time.Minute)
 			tracing[t] = ctx
+			log.Infof("notify start. %s", t)
 			n.Start(t)
 
 		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(15 * time.Second)
 	}
 
 }
