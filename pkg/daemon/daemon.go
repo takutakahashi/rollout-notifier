@@ -42,11 +42,13 @@ func (d Daemon) Start() error {
 	for {
 		targets, err := manager.GetTargets()
 		if err != nil {
+			log.Error(err)
 			continue
 		}
 		for t := range tracing {
 			finished, err := manager.Finished(t)
 			if err != nil {
+				log.Error(err)
 				continue
 			}
 			if finished {
