@@ -3,6 +3,12 @@ Notify a completion of rollout for applications on kubernetes
 
 ## Usage
 
+Only container image is available now.
+
+```
+docker pull ghcr.io/takutakahashi/rollout-notifier:latest
+```
+
 ```
 /daemon --namespace [namespace] --type [type] --config [config path]
 ```
