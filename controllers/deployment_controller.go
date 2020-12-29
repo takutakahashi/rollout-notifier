@@ -18,8 +18,11 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/takutakahashi/rollout-notifier/pkg/notify"
 	"github.com/takutakahashi/rollout-notifier/pkg/rollout"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -40,12 +43,33 @@ type DeploymentReconciler struct {
 func (r *DeploymentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	_ = r.Log.WithValues("deployment", req.NamespacedName)
-	var d *appsv1.Deployment
-	// your logic here
-	err := r.Get(ctx, req.NamespacedName, d)
+	n, err := notify.NewNotify("noop", "/")
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+	var d *appsv1.Deployment
+	// your logic here
+	n.Start(fmt.Sprintf("%s/%s", d.Namespace, d.Name))
+	go func() {
+		sec := 0
+		err := r.Get(ctx, req.NamespacedName, d)
+		dd := d.DeepCopy()
+		if err != nil {
+			r.Log.Error(err, "failed to get deployment")
+			return
+		}
+		for {
+			if rollout.Finished(dd) {
+				n.Finish(fmt.Sprintf("%s/%s", dd.Namespace, dd.Name))
+			}
+			time.Sleep(10 * time.Second)
+			sec += 10
+			if sec > 600 {
+				n.Failed(fmt.Sprintf("%s/%s", dd.Namespace, dd.Name))
+				return
+			}
+		}
+	}()
 
 	return ctrl.Result{}, nil
 }

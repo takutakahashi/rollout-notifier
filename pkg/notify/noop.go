@@ -18,3 +18,8 @@ func (n NoopNotify) Start(target string) error {
 	log.Info("start", target)
 	return nil
 }
+
+func (n NoopNotify) Failed(target string) error {
+	log.Info("failed", target)
+	return nil
+}

@@ -27,7 +27,7 @@ func (m Manager) GetTargets() ([]string, error) {
 		return []string{}, err
 	}
 	for _, dp := range dpl.Items {
-		if !rolloutFinished(&dp) {
+		if !Finished(&dp) {
 			result = append(result, dp.Name)
 		}
 	}
@@ -40,11 +40,11 @@ func (m Manager) Finished(name string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return rolloutFinished(dp), nil
+	return Finished(dp), nil
 
 }
 
-func rolloutFinished(dp *appsv1.Deployment) bool {
+func Finished(dp *appsv1.Deployment) bool {
 	s := dp.Status.DeepCopy()
 	replicas := *dp.Spec.DeepCopy().Replicas
 	return s.ReadyReplicas == replicas && s.UpdatedReplicas == replicas
