@@ -27,7 +27,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/kubernetes/pkg/controller/deployment/util"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -57,11 +56,10 @@ func (r *DeploymentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	}
 	var d appsv1.Deployment
 	err = r.Get(ctx, req.NamespacedName, &d)
-	currentCond := util.GetDeploymentCondition(d.Status, appsv1.DeploymentProgressing)
-	r.Log.Info("debug", "name", d.Name, "cond", currentCond)
-	completed := currentCond != nil && currentCond.Reason == util.NewRSAvailableReason
-	r.Log.Info("debug", "name", d.Name, "completed", completed)
-	if completed {
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if rollout.Finished(&d) || rollout.Timeout(&d) {
 		return ctrl.Result{}, nil
 	}
 	r.Progressing[req.NamespacedName] = true
