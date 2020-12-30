@@ -4,6 +4,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/kubernetes/pkg/controller/deployment/util"
 )
 
 type Config struct {
@@ -45,8 +46,11 @@ func (m Manager) Finished(name string) (bool, error) {
 }
 
 func Finished(dp *appsv1.Deployment) bool {
-	s := dp.Status.DeepCopy()
-	replicas := *dp.Spec.DeepCopy().Replicas
-	return s.ReadyReplicas == replicas && s.UpdatedReplicas == replicas
+	currentCond := util.GetDeploymentCondition(dp.Status, appsv1.DeploymentProgressing)
+	return currentCond != nil && currentCond.Reason == util.NewRSAvailableReason
+}
 
+func Timeout(dp *appsv1.Deployment) bool {
+	currentCond := util.GetDeploymentCondition(dp.Status, appsv1.DeploymentProgressing)
+	return currentCond != nil && currentCond.Reason == util.TimedOutReason
 }

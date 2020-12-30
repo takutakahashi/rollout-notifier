@@ -26,6 +26,8 @@ import (
 	"github.com/takutakahashi/rollout-notifier/pkg/rollout"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/kubernetes/pkg/controller/deployment/util"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -33,8 +35,9 @@ import (
 // DeploymentReconciler reconciles a Deployment object
 type DeploymentReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log         logr.Logger
+	Scheme      *runtime.Scheme
+	Progressing map[types.NamespacedName]bool
 }
 
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
@@ -47,27 +50,39 @@ func (r *DeploymentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	var d *appsv1.Deployment
-	// your logic here
+	if r.Progressing == nil {
+		r.Progressing = map[types.NamespacedName]bool{}
+	} else if r.Progressing[req.NamespacedName] {
+		return ctrl.Result{}, nil
+	}
+	var d appsv1.Deployment
+	err = r.Get(ctx, req.NamespacedName, &d)
+	currentCond := util.GetDeploymentCondition(d.Status, appsv1.DeploymentProgressing)
+	r.Log.Info("debug", "name", d.Name, "cond", currentCond)
+	completed := currentCond != nil && currentCond.Reason == util.NewRSAvailableReason
+	r.Log.Info("debug", "name", d.Name, "completed", completed)
+	if completed {
+		return ctrl.Result{}, nil
+	}
+	r.Progressing[req.NamespacedName] = true
 	n.Start(fmt.Sprintf("%s/%s", d.Namespace, d.Name))
 	go func() {
-		sec := 0
-		err := r.Get(ctx, req.NamespacedName, d)
-		dd := d.DeepCopy()
-		if err != nil {
-			r.Log.Error(err, "failed to get deployment")
-			return
-		}
 		for {
+			err := r.Get(ctx, req.NamespacedName, &d)
+			if err != nil {
+				r.Log.Error(err, "failed to get deployment")
+				return
+			}
+			dd := d.DeepCopy()
 			if rollout.Finished(dd) {
 				n.Finish(fmt.Sprintf("%s/%s", dd.Namespace, dd.Name))
-			}
-			time.Sleep(10 * time.Second)
-			sec += 10
-			if sec > 600 {
+				delete(r.Progressing, req.NamespacedName)
+				return
+			} else if rollout.Timeout(dd) {
 				n.Failed(fmt.Sprintf("%s/%s", dd.Namespace, dd.Name))
 				return
 			}
+			time.Sleep(10 * time.Second)
 		}
 	}()
 
