@@ -41,8 +41,12 @@ func (n SlackNotify) Finish(target string) error {
 	return n.notifySuccess(fmt.Sprintf("%s Rollout finished successflly! :+1:", target))
 }
 
+func (n SlackNotify) Failed(target string) error {
+	return n.notifySuccess(fmt.Sprintf("%s Rollout finished successflly! :+1:", target))
+}
+
 func (n SlackNotify) Start(target string) error {
-	return n.notifySuccess(fmt.Sprintf("%s Rollout started! :rocket:", target))
+	return n.notifyError(fmt.Sprintf("%s Rollout failed. :cry:", target))
 }
 
 func (n SlackNotify) notifySuccess(message string) error {

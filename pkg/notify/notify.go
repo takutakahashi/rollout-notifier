@@ -3,6 +3,7 @@ package notify
 type Notifier interface {
 	Start(target string) error
 	Finish(target string) error
+	Failed(target string) error
 }
 
 type Config struct {
