@@ -40,19 +40,25 @@ func (d Daemon) Start() error {
 	log.Info("starting daemon...")
 	tracing := map[string]context.Context{}
 	for {
+		time.Sleep(15 * time.Second)
 		targets, err := manager.GetTargets()
 		if err != nil {
+			log.Error(err)
 			continue
 		}
 		for t := range tracing {
 			finished, err := manager.Finished(t)
 			if err != nil {
+				log.Error(err)
 				continue
 			}
 			if finished {
 				delete(tracing, t)
 				log.Infof("notify finish. %s", t)
-				n.Finish(t)
+				err = n.Finish(t)
+				if err != nil {
+					log.Error(err)
+				}
 			}
 		}
 		for _, t := range targets {
@@ -63,10 +69,10 @@ func (d Daemon) Start() error {
 			ctx := context.TODO()
 			tracing[t] = ctx
 			log.Infof("notify start. %s", t)
-			n.Start(t)
-
+			err = n.Start(t)
+			if err != nil {
+				log.Error(err)
+			}
 		}
-		time.Sleep(15 * time.Second)
 	}
-
 }
