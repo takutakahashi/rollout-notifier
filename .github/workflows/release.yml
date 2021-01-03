@@ -31,12 +31,12 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${GITHUB_REF#refs/tags/}
+            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ github.event.ref }}
       - name: Build manifests
         run: |
           curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
           make manifests
-          cd config/manager && kustomize edit set image controller=ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${GITHUB_REF#refs/tags/}
+          cd config/manager && kustomize edit set image controller=ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ github.event.ref }}
           kustomize build config/default > ./release.yaml
       - name: Create Release
         id: create_release
