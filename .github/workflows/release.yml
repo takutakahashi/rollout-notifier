@@ -39,6 +39,7 @@ jobs:
           curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
           make manifests
           cd config/manager && kustomize edit set image controller=ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ env.RELEASE_VERSION }}
+          cd ../../
           kustomize build config/default > ./release.yaml
       - name: Create Release
         id: create_release
