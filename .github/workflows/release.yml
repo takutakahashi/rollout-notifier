@@ -16,7 +16,9 @@ jobs:
       - name: Build manifests
         run: |
           curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
-          make release IMG=takutakahashi/rollout-notifier:${GITHUB_REF#refs/tags/}
+          make manifests
+          cd config/manager && kustomize edit set image controller=takutakahashi/rollout-notifier:${GITHUB_REF#refs/tags/}
+          kustomize build config/default > ./release.yaml
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
