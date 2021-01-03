@@ -36,4 +36,11 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
+        volumeMounts:
+        - mountPath: /etc/rollout-notifier
+          name: config
       terminationGracePeriodSeconds: 10
+      volumes:
+      - name: config
+        secret:
+          name: rollout-notifier-secret
