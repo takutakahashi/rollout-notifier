@@ -37,6 +37,7 @@ type DeploymentReconciler struct {
 	Log         logr.Logger
 	Scheme      *runtime.Scheme
 	Progressing map[types.NamespacedName]bool
+	Notify      notify.Notifier
 }
 
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
@@ -45,17 +46,24 @@ type DeploymentReconciler struct {
 func (r *DeploymentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	_ = r.Log.WithValues("deployment", req.NamespacedName)
-	n, err := notify.NewNotify("noop", "/")
-	if err != nil {
-		return ctrl.Result{}, err
+	if r.Notify == nil {
+		n, err := notify.NewNotify("slack", "/etc/rollout-notifier/config.yaml")
+		if err != nil {
+			n, err = notify.NewNotify("noop", "/")
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+		r.Notify = n
 	}
+	n := r.Notify
 	if r.Progressing == nil {
 		r.Progressing = map[types.NamespacedName]bool{}
 	} else if r.Progressing[req.NamespacedName] {
 		return ctrl.Result{}, nil
 	}
 	var d appsv1.Deployment
-	err = r.Get(ctx, req.NamespacedName, &d)
+	err := r.Get(ctx, req.NamespacedName, &d)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
