@@ -86,6 +86,7 @@ func (r *DeploymentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 				return
 			} else if rollout.Timeout(dd) {
 				n.Failed(fmt.Sprintf("%s/%s", dd.Namespace, dd.Name))
+				delete(r.Progressing, req.NamespacedName)
 				return
 			}
 			time.Sleep(10 * time.Second)
