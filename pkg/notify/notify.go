@@ -1,9 +1,9 @@
 package notify
 
 type Notifier interface {
-	Start(target string) error
-	Finish(target string) error
-	Failed(target string) error
+	Start(target, comment string) error
+	Finish(target, comment string) error
+	Failed(target, comment string) error
 }
 
 type Config struct {
