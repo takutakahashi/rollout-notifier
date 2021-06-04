@@ -31,6 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var commentAnnotation = "rollout-notifier.io/comment"
+
 // DeploymentReconciler reconciles a Deployment object
 type DeploymentReconciler struct {
 	client.Client
@@ -71,7 +73,9 @@ func (r *DeploymentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		return ctrl.Result{}, nil
 	}
 	r.Progressing[req.NamespacedName] = true
-	n.Start(fmt.Sprintf("%s/%s", d.Namespace, d.Name))
+	target := fmt.Sprintf("%s/%s", d.Namespace, d.Name)
+	comment := d.Annotations[commentAnnotation]
+	n.Start(target, comment)
 	go func() {
 		for {
 			err := r.Get(ctx, req.NamespacedName, &d)
@@ -81,11 +85,11 @@ func (r *DeploymentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 			}
 			dd := d.DeepCopy()
 			if rollout.Finished(dd) {
-				n.Finish(fmt.Sprintf("%s/%s", dd.Namespace, dd.Name))
+				n.Finish(target, comment)
 				delete(r.Progressing, req.NamespacedName)
 				return
 			} else if rollout.Timeout(dd) {
-				n.Failed(fmt.Sprintf("%s/%s", dd.Namespace, dd.Name))
+				n.Failed(target, comment)
 				delete(r.Progressing, req.NamespacedName)
 				return
 			}

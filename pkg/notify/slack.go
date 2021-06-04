@@ -34,33 +34,43 @@ func NewSlackNotify(configPath string) (SlackNotify, error) {
 }
 
 func (n SlackNotify) Test() error {
-	return n.notifyError("test")
+	return n.notifyError("test", "comment")
 }
 
-func (n SlackNotify) Finish(target string) error {
-	return n.notifySuccess(fmt.Sprintf("%s Rollout finished successflly! :+1:", target))
+func (n SlackNotify) Finish(target, comment string) error {
+	return n.notifySuccess(fmt.Sprintf("%s Rollout finished successflly! :+1:", target), comment)
 }
 
-func (n SlackNotify) Failed(target string) error {
-	return n.notifyError(fmt.Sprintf("%s Rollout failed. :cry:", target))
+func (n SlackNotify) Failed(target, comment string) error {
+	return n.notifyError(fmt.Sprintf("%s Rollout failed. :cry:", target), comment)
 }
 
-func (n SlackNotify) Start(target string) error {
-	return n.notifySuccess(fmt.Sprintf("%s Rollout started! :rocket:", target))
+func (n SlackNotify) Start(target, comment string) error {
+	return n.notifySuccess(fmt.Sprintf("%s Rollout started! :rocket:", target), comment)
 }
 
-func (n SlackNotify) notifySuccess(message string) error {
-	return n.notify(message, "#009900")
+func (n SlackNotify) notifySuccess(message, comment string) error {
+	return n.notify(message, comment, "#009900")
 }
 
-func (n SlackNotify) notifyError(message string) error {
-	return n.notify(message, "#c62828")
+func (n SlackNotify) notifyError(message, comment string) error {
+	return n.notify(message, comment, "#c62828")
 }
 
-func (n SlackNotify) notify(message, color string) error {
-	attachment := slack.Attachment{
-		Text:  message,
-		Color: color,
+func (n SlackNotify) notify(message, comment, color string) error {
+	var attachment slack.Attachment
+	if comment != "" {
+		attachment = slack.Attachment{
+			Title: message,
+			Text:  comment,
+			Color: color,
+		}
+	} else {
+		attachment = slack.Attachment{
+			Title: message,
+			Color: color,
+		}
+
 	}
 
 	_, _, err := n.c.PostMessage(
